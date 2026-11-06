@@ -50,7 +50,18 @@ insert into staff_profiles (id, full_name, role)
 select id, 'Staff Name', 'staff' from auth.users where email = 'staff@example.com';
 ```
 
-### 5. Get the app on your phone
+### 5. Forgot password email (one time)
+Supabase → **Authentication → Emails → Reset Password** → replace the message body with:
+
+```html
+<h2>Meloria Siddha – reset your password</h2>
+<p>Your reset code is:</p>
+<h1>{{ .Token }}</h1>
+<p>Enter this code in the app. It expires in 1 hour.</p>
+```
+→ **Save**. The app's *Forgot password?* screen asks for this code.
+
+### 6. Get the app on your phone
 - **Automatic:** every push to GitHub builds the app. Open the repo → **Actions** → latest run →
   download **meloria-siddha-apk** → unzip → install `app-release.apk` on the phone
   (allow "Install unknown apps" once).
