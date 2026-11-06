@@ -21,6 +21,7 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
   late final _phone = TextEditingController(text: str(widget.patient?['phone']));
   late final _address = TextEditingController(text: str(widget.patient?['address']));
   late final _refName = TextEditingController(text: str(widget.patient?['referred_by_name']));
+  final _oldNumber = TextEditingController(); // for entering old patients (1–218)
   late String _gender = str(widget.patient?['gender']);
   late String _refType = str(widget.patient?['referred_by_type']);
   String? _refPatientId;
@@ -67,6 +68,11 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
           ? (_refPatientLabel.isEmpty ? null : _refPatientLabel)
           : (_refName.text.trim().isEmpty ? null : _refName.text.trim()),
     };
+    final old = toInt(_oldNumber.text);
+    if (widget.patient == null && old != null) {
+      // Old patient: keep their original number, e.g. 45 → MEL1-0045
+      data['patient_code'] = 'MEL1-${old.toString().padLeft(4, '0')}';
+    }
     try {
       final saved = await Db.savePatient(data, id: widget.patient?['id']);
       if (!mounted) return;
@@ -75,7 +81,12 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
       }
       Navigator.pop(context, saved);
     } catch (e) {
-      if (mounted) showMsg(context, 'Could not save: $e', error: true);
+      final dup = e.toString().contains('patient_code');
+      if (mounted) {
+        showMsg(context,
+            dup ? 'That patient number is already used.' : 'Could not save: $e',
+            error: true);
+      }
     }
     if (mounted) setState(() => _saving = false);
   }
@@ -96,11 +107,21 @@ class _PatientFormScreenState extends State<PatientFormScreen> {
                 child: Tag('Patient ID  ${widget.patient!['patient_code']}', color: Brand.teal),
               )
             else
-              const Padding(
-                padding: EdgeInsets.only(bottom: 12),
-                child: Text('Patient ID is created automatically (MEL1-0001…)',
-                    style: TextStyle(color: Brand.muted, fontSize: 13)),
+              SectionCard(
+                title: 'Patient ID',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('New patients get the next number automatically.',
+                        style: TextStyle(color: Brand.muted, fontSize: 13)),
+                    const SizedBox(height: 10),
+                    Field('Old patient? Enter their existing number', _oldNumber,
+                        keyboard: TextInputType.number,
+                        hint: 'e.g. 45 → MEL1-0045 (leave empty for new)'),
+                  ],
+                ),
               ),
+            if (!editing) const SizedBox(height: 14),
             SectionCard(
               title: 'Basic details',
               child: Column(
