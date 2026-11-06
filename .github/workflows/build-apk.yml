@@ -23,7 +23,24 @@ jobs:
 
       - run: flutter pub get
 
+      # Uses the permanent Meloria signing key if it is saved in repo secrets
+      # (MELORIA_KEYSTORE_BASE64, MELORIA_KEYSTORE_PASSWORD, MELORIA_KEY_PASSWORD).
+      # Without them the build still runs, but the APK can't update an installed app.
+      - name: Restore signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.MELORIA_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/meloria-release.jks"
+            echo "MELORIA_KEYSTORE_PATH=$RUNNER_TEMP/meloria-release.jks" >> "$GITHUB_ENV"
+          else
+            echo "No signing key secret – building with temporary debug key."
+          fi
+
       - name: Build APK
+        env:
+          MELORIA_KEYSTORE_PASSWORD: ${{ secrets.MELORIA_KEYSTORE_PASSWORD }}
+          MELORIA_KEY_PASSWORD: ${{ secrets.MELORIA_KEY_PASSWORD }}
         run: >
           flutter build apk --release
           --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }}

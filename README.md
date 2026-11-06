@@ -69,6 +69,14 @@ Supabase → **Authentication → Emails → Reset Password** → replace the me
 
 ---
 
+## App signing key (important)
+Every update must be signed with the same **Meloria signing key** (`meloria-release.jks`),
+otherwise Android will not install it over the old version.
+- The key is **not** in this repository (never commit it). Keep the backup copy safe (Google Drive + one offline copy).
+- Local build: create `android/key.properties` with `storeFile`, `storePassword`, `keyAlias=meloria`, `keyPassword`.
+- GitHub build: add repo secrets `MELORIA_KEYSTORE_BASE64`, `MELORIA_KEYSTORE_PASSWORD`, `MELORIA_KEY_PASSWORD`.
+- App ID: `com.meloriasiddha.staff` (the patient app will be `com.meloriasiddha.patient`).
+
 ## Where to change things
 
 | You want to change | File |
