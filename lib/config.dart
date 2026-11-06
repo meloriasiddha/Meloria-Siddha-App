@@ -9,8 +9,8 @@
 // SUPABASE_ANON_KEY — the automatic build passes them in.
 // =====================================================================
 
-const String _pastedUrl = ''; // e.g. 'https://abcdxyz.supabase.co'
-const String _pastedAnonKey = ''; // e.g. 'eyJhbGciOi...'
+const String _pastedUrl = 'https://xcooxtqusidhbzduwwgm.supabase.co'; // e.g. 'https://abcdxyz.supabase.co'
+const String _pastedAnonKey = 'sb_publishable_m3NQWTikrplsZGv9CKLudw_zdY5nhDX'; // publishable key: safe in the app // e.g. 'eyJhbGciOi...'
 
 const String _envUrl = String.fromEnvironment('SUPABASE_URL');
 const String _envAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
