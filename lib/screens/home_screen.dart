@@ -4,7 +4,8 @@ import '../services/db.dart';
 import '../widgets/common.dart';
 import 'more_screen.dart';
 import 'patients_screen.dart';
-import 'stock_screen.dart';
+import 'calendar_screen.dart';
+import 'tracking_inbox_screen.dart';
 import 'today_screen.dart';
 
 /// Holds who is signed in, so any screen can check doctor vs staff.
@@ -23,6 +24,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _tab = 0;
+  int _unread = 0;
   bool _loading = true;
   String? _error;
 
@@ -73,8 +75,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final pages = [
       const TodayScreen(),
+      const CalendarScreen(),
+      TrackingInboxScreen(onUnreadChanged: (n) {
+        if (n != _unread && mounted) setState(() => _unread = n);
+      }),
       const PatientsScreen(),
-      const StockScreen(),
       const MoreScreen(),
     ];
 
@@ -83,16 +88,26 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
               icon: Icon(Icons.today_outlined), selectedIcon: Icon(Icons.today), label: 'Today'),
+          const NavigationDestination(
+              icon: Icon(Icons.calendar_month_outlined),
+              selectedIcon: Icon(Icons.calendar_month),
+              label: 'Calendar'),
           NavigationDestination(
+              icon: Badge(
+                  isLabelVisible: _unread > 0,
+                  label: Text('$_unread'),
+                  child: const Icon(Icons.forum_outlined)),
+              selectedIcon: Badge(
+                  isLabelVisible: _unread > 0,
+                  label: Text('$_unread'),
+                  child: const Icon(Icons.forum)),
+              label: 'Tracking'),
+          const NavigationDestination(
               icon: Icon(Icons.people_outline), selectedIcon: Icon(Icons.people), label: 'Patients'),
-          NavigationDestination(
-              icon: Icon(Icons.inventory_2_outlined),
-              selectedIcon: Icon(Icons.inventory_2),
-              label: 'Stock'),
-          NavigationDestination(
+          const NavigationDestination(
               icon: Icon(Icons.more_horiz), selectedIcon: Icon(Icons.more_horiz), label: 'More'),
         ],
       ),

@@ -108,6 +108,15 @@ ThemeData buildTheme() {
         GoogleFonts.montserrat(fontSize: 12, fontWeight: FontWeight.w500, color: Brand.slate),
       ),
     ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.selected) ? Brand.slate : Colors.white),
+        foregroundColor: WidgetStateProperty.resolveWith(
+            (s) => s.contains(WidgetState.selected) ? Colors.white : Brand.slate),
+        side: const WidgetStatePropertyAll(BorderSide(color: Brand.line)),
+      ),
+    ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: Brand.slate,
       foregroundColor: Colors.white,
@@ -119,3 +128,73 @@ ThemeData buildTheme() {
 /// Serif style used for "Siddha Hospital" under the MELORIA wordmark.
 TextStyle serifStyle({double size = 16, Color color = Brand.slate}) =>
     GoogleFonts.cormorantGaramond(fontSize: size, fontWeight: FontWeight.w600, color: color);
+
+/// Appointment colours: type = colour family, mode = shade.
+/// In clinic (offline) = solid dark shade, online (video / phone) = light shade.
+class ApptStyle {
+  static const types = <String, String>{
+    'initial': 'Initial consultation',
+    'review': 'Review',
+    'therapy': 'Therapy',
+    'procedure': 'External procedure',
+    'program': 'Program visit',
+  };
+  static const shortTypes = <String, String>{
+    'initial': 'Initial',
+    'review': 'Review',
+    'therapy': 'Therapy',
+    'procedure': 'Procedure',
+    'program': 'Program',
+  };
+  static const modes = <String, String>{
+    'offline': 'In clinic',
+    'video': 'Video call',
+    'phone': 'Phone call',
+  };
+
+  static const _solid = <String, Color>{
+    'initial': Color(0xFF2C3A45),
+    'review': Color(0xFF4F7564),
+    'therapy': Color(0xFFB0693E),
+    'procedure': Color(0xFF6E5A80),
+    'program': Color(0xFF2F7480),
+  };
+  static const _light = <String, Color>{
+    'initial': Color(0xFF9AA9B4),
+    'review': Color(0xFFB9D1C4),
+    'therapy': Color(0xFFE8C3A6),
+    'procedure': Color(0xFFCBBFD8),
+    'program': Color(0xFFA8D2D9),
+  };
+
+  static Color solid(String type) => _solid[type] ?? Brand.slate;
+
+  static Color background(String type, String mode) =>
+      mode == 'offline' ? solid(type) : (_light[type] ?? Brand.line);
+
+  static Color foreground(String mode) => mode == 'offline' ? Colors.white : Brand.slate;
+
+  static IconData modeIcon(String mode) => switch (mode) {
+        'video' => Icons.videocam_outlined,
+        'phone' => Icons.call_outlined,
+        _ => Icons.local_hospital_outlined,
+      };
+
+  /// Default length in minutes for each type.
+  static int defaultMinutes(String type) => switch (type) {
+        'initial' => 20,
+        'review' => 10,
+        'therapy' => 30,
+        'procedure' => 30,
+        _ => 15,
+      };
+
+  static const statuses = <String, String>{
+    'booked': 'Booked',
+    'pending_payment': 'Waiting for payment',
+    'arrived': 'Arrived',
+    'done': 'Done',
+    'no_show': 'No-show',
+    'cancelled': 'Cancelled',
+  };
+}

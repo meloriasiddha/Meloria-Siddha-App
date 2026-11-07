@@ -15,6 +15,14 @@ Built with **Flutter** (one codebase → Android, Windows/PC, web) and **Supabas
 - Medicine stock with batches, expiry and low-stock alerts (stock reduces automatically when prescribed)
 - Feedable treatment advice list
 
+**Update 1.1: Appointments, calendar & tracking**
+- Doctor and staff book appointments (Initial / Review / Therapy / Procedure / Program, In clinic / Video / Phone); Initial vs Review suggested automatically (Initial again after 3 months away); overlaps allowed
+- Colour-coded calendar (Day / Week / Month): type = colour, online = light shade
+- Arrived → creates the visit and opens intake; Done / No-show / Reschedule / Cancel; online bookings wait for payment
+- Doctor can lock a patient's consultation mode
+- Health tracking plans per patient (sugar, diet, weight, waist, hip, BP, SpO2, periods, sleep, water, exercise, symptoms, custom) with Diabetes / PCOD / Weight-loss templates, reminder times and target ranges
+- Tracking inbox with unread counts and a chat thread per patient: entry cards, out-of-range flags, weight change, replies with sender name, test requests
+
 Coming next: Phase 2 billing & PDF · Phase 3 patient app · Phase 4 diabetes tracker · Phase 5 PC version.
 
 ---
@@ -34,6 +42,10 @@ In Supabase go to **Project Settings → API** and copy:
 Paste them into [`lib/config.dart`](lib/config.dart) (`defaultValue: '...'`),
 **or** add them as GitHub secrets `SUPABASE_URL` and `SUPABASE_ANON_KEY`
 (repo → Settings → Secrets and variables → Actions) so the automatic build uses them.
+
+### 2b. Updates to the database
+After `schema.sql`, also run each file in `supabase/migrations/` in number order
+(e.g. `002_appointments_tracking.sql`). Each is safe to run twice.
 
 ### 3. Create the logins
 Supabase → **Authentication → Users → Add user** (email + password, tick *Auto confirm*).
@@ -91,7 +103,12 @@ otherwise Android will not install it over the old version.
 | Vitals & intake | `lib/screens/intake_screen.dart` |
 | Doctor case sheet | `lib/screens/consultation_screen.dart` |
 | Stock & batches | `lib/screens/stock_screen.dart`, `medicine_form_screen.dart` |
-| Advice list, sign out | `lib/screens/more_screen.dart` |
+| Advice list, stock link, sign out | `lib/screens/more_screen.dart` |
+| Appointment colours & labels | `lib/theme.dart` (`ApptStyle`) |
+| Calendar / booking | `lib/screens/calendar_screen.dart`, `book_appointment_screen.dart` |
+| Tracker types, templates, reminder defaults | `lib/services/trackers.dart` |
+| Tracking inbox / chat / plan | `lib/screens/tracking_inbox_screen.dart`, `tracking_chat_screen.dart`, `tracking_plan_screen.dart` |
+| Reading entry form | `lib/widgets/entry_form.dart` |
 | Allergies & current meds card | `lib/widgets/allergies_meds.dart` |
 | Logo & icon | `assets/images/`, `assets/icon/` (then run `dart run flutter_launcher_icons`) |
 

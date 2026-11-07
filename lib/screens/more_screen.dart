@@ -5,6 +5,7 @@ import '../services/db.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'home_screen.dart';
+import 'stock_screen.dart';
 
 /// More: treatment advice list, account, sign out.
 class MoreScreen extends StatelessWidget {
@@ -29,6 +30,15 @@ class MoreScreen extends StatelessWidget {
           Card(
             child: Column(children: [
               ListTile(
+                leading: const Icon(Icons.inventory_2_outlined, color: Brand.teal),
+                title: const Text('Medicine stock'),
+                subtitle: const Text('Medicines, batches, expiry and low-stock alerts'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => const StockScreen())),
+              ),
+              const Divider(),
+              ListTile(
                 leading: const Icon(Icons.spa_outlined, color: Brand.sageDark),
                 title: const Text('Treatment advice list'),
                 subtitle: const Text('Varmam, thokkanam and other therapies'),
@@ -50,7 +60,7 @@ class MoreScreen extends StatelessWidget {
           const Center(child: BrandMark(size: 44)),
           const SizedBox(height: 8),
           const Center(
-              child: Text('$appName · v1.0 (Phase 1)',
+              child: Text('$appName · v1.1',
                   style: TextStyle(color: Brand.muted, fontSize: 12))),
         ],
       ),
