@@ -9,7 +9,7 @@ void main() {
   test('sample bill renders', () async {
     final bytes = await BillPdf.build(
       bill: {
-        'bill_no': 'MEL1-B-2026-0001',
+        'bill_no': 'MEL1-B-0001',
         'bill_date': DateTime(2026, 11, 7, 19, 5).toIso8601String(),
         'status': 'paid',
         'subtotal': 1195,
