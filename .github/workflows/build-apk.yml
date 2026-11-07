@@ -46,7 +46,19 @@ jobs:
           --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }}
           --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
 
+      - name: Build patient app APK
+        working-directory: patient_app
+        env:
+          MELORIA_KEYSTORE_PASSWORD: ${{ secrets.MELORIA_KEYSTORE_PASSWORD }}
+          MELORIA_KEY_PASSWORD: ${{ secrets.MELORIA_KEY_PASSWORD }}
+        run: flutter pub get && flutter build apk --release
+
       - uses: actions/upload-artifact@v4
         with:
-          name: meloria-siddha-apk
+          name: meloria-clinic-staff-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: meloria-siddha-patient-apk
+          path: patient_app/build/app/outputs/flutter-apk/app-release.apk

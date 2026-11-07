@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../config.dart';
 import '../services/db.dart';
+import '../services/patient_app_db.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'home_screen.dart';
 import 'stock_screen.dart';
 import 'bills_screen.dart';
+import 'app_requests_screen.dart';
+import 'clinic_setup_screens.dart';
 
 /// More: treatment advice list, account, sign out.
 class MoreScreen extends StatelessWidget {
@@ -31,6 +34,29 @@ class MoreScreen extends StatelessWidget {
           Card(
             child: Column(children: [
               ListTile(
+                leading: const Icon(Icons.phone_android, color: Color(0xFF2F7480)),
+                title: const Text('Patient app requests'),
+                subtitle: const Text('New sign-ups, program requests, forgotten PINs'),
+                trailing: FutureBuilder<int>(
+                  future: PatientAppDb.pendingCount(),
+                  builder: (_, s) => (s.data ?? 0) > 0
+                      ? Badge(label: Text('${s.data}'), child: const Icon(Icons.chevron_right))
+                      : const Icon(Icons.chevron_right),
+                ),
+                onTap: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => const AppRequestsScreen())),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.event_busy_outlined, color: Brand.danger),
+                title: const Text('Clinic availability'),
+                subtitle: const Text('Closed days, doctor not available'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => const AvailabilityScreen())),
+              ),
+              const Divider(),
+              ListTile(
                 leading: const Icon(Icons.receipt_long_outlined, color: Brand.slate),
                 title: const Text('Bills & collection'),
                 subtitle: const Text('Today, this week, payment due'),
@@ -42,10 +68,10 @@ class MoreScreen extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.workspace_premium_outlined, color: Color(0xFF2F7480)),
                 title: const Text('Programs & packages'),
-                subtitle: const Text('Diabetes, PCOD, weight loss – price and length'),
+                subtitle: const Text('Program pages, plans and prices (shown in patient app)'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.push(
-                    context, MaterialPageRoute(builder: (_) => const ProgramsScreen())),
+                    context, MaterialPageRoute(builder: (_) => const ProgramPagesScreen())),
               ),
               const Divider(),
               ListTile(
@@ -79,6 +105,20 @@ class MoreScreen extends StatelessWidget {
                     context, MaterialPageRoute(builder: (_) => const BillingSettingsScreen())),
               ),
             ),
+            const SizedBox(height: 14),
+            Card(
+              child: Column(children: [
+                ListTile(
+                  leading: const Icon(Icons.badge_outlined),
+                  title: const Text('Doctor profile & UPI'),
+                  subtitle: const Text('Shown to patients when booking'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                      context, MaterialPageRoute(builder: (_) => const DoctorProfileScreen())),
+                ),
+
+              ]),
+            ),
           ],
           const SizedBox(height: 14),
           Card(
@@ -92,7 +132,7 @@ class MoreScreen extends StatelessWidget {
           const Center(child: BrandMark(size: 44)),
           const SizedBox(height: 8),
           const Center(
-              child: Text('$appName · v1.2',
+              child: Text('$appName · v1.3',
                   style: TextStyle(color: Brand.muted, fontSize: 12))),
         ],
       ),

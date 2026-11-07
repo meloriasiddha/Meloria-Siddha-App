@@ -27,7 +27,7 @@ class Db {
 
   // ------------------------------------------------------------ patients
   static Future<List<DbRow>> searchPatients(String q) async {
-    final query = _c.from('patients').select();
+    final query = _c.from('patients').select().eq('status', 'active');
     final t = q.trim().replaceAll(',', ' ');
     if (t.isEmpty) {
       return await query.order('created_at', ascending: false).limit(50);

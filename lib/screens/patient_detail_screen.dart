@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/appointments_db.dart';
 import '../services/bill_pdf.dart';
 import '../services/billing_db.dart';
+import '../services/patient_app_db.dart';
 import '../services/db.dart';
 import '../theme.dart';
 import '../widgets/allergies_meds.dart';
@@ -102,7 +103,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   }
 
   Future<void> _enroll() async {
-    final list = await BillDb.programs();
+    final list = (await PatientAppDb.programsWithPlans())
+        .where((x) => ((x['program_plans'] as List?) ?? []).isNotEmpty)
+        .toList();
     if (!mounted) return;
     final prog = await showModalBottomSheet<DbRow>(
       context: context,
@@ -111,29 +114,46 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
           const ListTile(title: Text('Enroll in program', style: TextStyle(fontWeight: FontWeight.w600))),
           ...list.map((x) => ListTile(
                 title: Text(str(x['name'])),
-                subtitle: Text('${x['duration_days']} days'),
-                trailing: Text('₹${BillPdf.m(x['price'] ?? 0)}'),
+                trailing: const Icon(Icons.chevron_right),
                 onTap: () => Navigator.pop(ctx, x),
               )),
         ]),
       ),
     );
     if (prog == null || !mounted) return;
+    final plans = ((prog['program_plans'] as List?) ?? []).cast<Map>().toList()
+      ..sort((a, b) => (a['months'] as num).compareTo(b['months'] as num));
+    final plan = await showModalBottomSheet<Map>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: ListView(shrinkWrap: true, children: [
+          ListTile(title: Text(str(prog['name']), style: const TextStyle(fontWeight: FontWeight.w600))),
+          ...plans.map((pl) => ListTile(
+                title: Text('${pl['months']} months${pl['recommended'] == true ? '  ★' : ''}'),
+                subtitle: str(pl['note']).isEmpty ? null : Text(str(pl['note'])),
+                trailing: Text('₹${BillPdf.m(pl['price'] ?? 0)}'),
+                onTap: () => Navigator.pop(ctx, pl),
+              )),
+        ]),
+      ),
+    );
+    if (plan == null || !mounted) return;
+    final months = (plan['months'] as num).toInt();
     final start = DateTime.now();
-    final end = start.add(Duration(days: (prog['duration_days'] ?? 90) as int));
+    final end = DateTime(start.year, start.month + months, start.day);
     DbRow? enrolled;
     final ok = await guard(context, () async {
       enrolled = await BillDb.enroll({
         'patient_id': widget.patientId,
         'program_id': prog['id'],
-        'name': prog['name'],
-        'price': prog['price'] ?? 0,
+        'name': '${prog['name']} – $months month${months == 1 ? '' : 's'}',
+        'price': plan['price'] ?? 0,
         'start_date': isoDate(start),
         'end_date': isoDate(end),
       });
     });
     if (ok && enrolled != null && mounted) {
-      showMsg(context, 'Enrolled until ${fmtDate(end)}. Prepare the package bill.');
+      showMsg(context, 'Enrolled until ${fmtDate(end)}. Prepare the program bill.');
       await _openBill(program: enrolled);
     }
   }

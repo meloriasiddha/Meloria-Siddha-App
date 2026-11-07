@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import '../services/appointments_db.dart';
 import '../services/db.dart';
+import '../services/patient_app_db.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import 'book_appointment_screen.dart';
@@ -34,6 +35,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   String _view = 'day';
   DateTime _sel = _d(DateTime.now());
   List<DbRow> _appts = [];
+  List<DbRow> _blocks = [];
   List<Map<String, dynamic>> _sessions = [];
   bool _loading = true;
 
@@ -62,7 +64,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final (a, b) = _range;
     try {
       final r = await ApptDb.between(isoDate(a), isoDate(b));
-      if (mounted) setState(() => _appts = r);
+      List<DbRow> bl = [];
+      try {
+        bl = await PatientAppDb.blocksBetween(isoDate(a), isoDate(b));
+      } catch (_) {}
+      if (mounted) {
+        setState(() {
+          _appts = r;
+          _blocks = bl;
+        });
+      }
     } catch (e) {
       if (mounted) showMsg(context, 'Could not load appointments: $e', error: true);
     }
@@ -126,6 +137,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     const SizedBox(height: 6),
                     Text('Status: ${ApptStyle.statuses[status] ?? status}',
                         style: const TextStyle(fontWeight: FontWeight.w600)),
+                    if (a['booked_by'] == 'patient') const Text('Booked by patient in the app'),
+                    if (str(a['program_interest']).isNotEmpty) Text('Interested in: ${a['program_interest']}'),
+                    if (str(a['refund_choice']).isNotEmpty)
+                      Text(a['refund_choice'] == 'refund' ? 'Patient asked for a refund' : 'Patient kept payment as credit'),
                     if (str(a['notes']).isNotEmpty) Text(str(a['notes'])),
                   ],
                 ),
@@ -390,6 +405,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final list = _on(_sel);
     final used = <String>{};
     final children = <Widget>[];
+    final dayBlocks = _blocks.where((b) => b['block_date'] == isoDate(_sel)).toList();
+    for (final b in dayBlocks.where((b) => b['start_time'] == null)) {
+      children.add(Container(
+        margin: const EdgeInsets.only(top: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: Brand.danger.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12)),
+        child: Text('Clinic closed all day${str(b['reason']).isEmpty ? '' : ' – ${b['reason']}'}',
+            style: const TextStyle(color: Brand.danger, fontWeight: FontWeight.w600)),
+      ));
+    }
     for (final s in _sessions) {
       final start = _mins(str(s['start']));
       final end = _mins(str(s['end']));
@@ -411,7 +436,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
               style: const TextStyle(fontSize: 11, color: Brand.sageDark, fontWeight: FontWeight.w600)),
         ]),
       ));
-      children.add(_timeline(start, end, inSession));
+      children.add(_timeline(start, end, inSession,
+          blocks: dayBlocks.where((b) => b['start_time'] != null).toList()));
     }
     final others = list.where((a) => !used.contains(a['id'])).toList();
     if (others.isNotEmpty) {
@@ -426,7 +452,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 100), children: children);
   }
 
-  Widget _timeline(int start, int end, List<DbRow> appts) {
+  Widget _timeline(int start, int end, List<DbRow> appts, {List<DbRow> blocks = const []}) {
     const px = 3.0; // pixels per minute
     const labelW = 46.0;
     final height = (end - start) * px + 8;
@@ -489,6 +515,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     Expanded(child: Container(height: 1, color: Brand.line)),
                   ]),
                 ),
+              for (final b in blocks)
+                if (_mins(str(b['end_time'])) > start && _mins(str(b['start_time'])) < end)
+                  Positioned(
+                    top: (_mins(str(b['start_time'])).clamp(start, end) - start) * px,
+                    left: labelW,
+                    right: 0,
+                    height: ((_mins(str(b['end_time'])).clamp(start, end) - _mins(str(b['start_time'])).clamp(start, end)) * px)
+                        .toDouble(),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          color: Brand.muted.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(8)),
+                      alignment: Alignment.center,
+                      child: Text(
+                          b['kind'] == 'closed' ? 'Closed' : 'Doctor not available',
+                          style: const TextStyle(color: Brand.muted, fontSize: 11, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
               for (var i = 0; i < items.length; i++)
                 Positioned(
                   top: (items[i].s - start) * px + 2,
@@ -542,6 +585,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (a['booked_by'] == 'patient') Icon(Icons.phone_android, size: 13, color: fg),
                 if (mode != 'offline') Icon(ApptStyle.modeIcon(mode), size: 14, color: fg),
                 if (status != 'booked')
                   Padding(

@@ -18,7 +18,7 @@ const String _envAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 const String supabaseUrl = _envUrl != '' ? _envUrl : _pastedUrl;
 const String supabaseAnonKey = _envAnonKey != '' ? _envAnonKey : _pastedAnonKey;
 
-const String appName = 'Meloria Siddha';
+const String appName = 'Meloria Clinic';
 const String clinicLegalName = 'Meloria Siddha and Varma Clinic';
 const int currentBranchId = 1;
 
