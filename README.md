@@ -109,6 +109,9 @@ otherwise Android will not install it over the old version.
 | Tracker types, templates, reminder defaults | `lib/services/trackers.dart` |
 | Tracking inbox / chat / plan | `lib/screens/tracking_inbox_screen.dart`, `tracking_chat_screen.dart`, `tracking_plan_screen.dart` |
 | Reading entry form | `lib/widgets/entry_form.dart` |
+| Bill screen / fee rule | `lib/screens/bill_screen.dart`, `lib/services/billing_db.dart` |
+| Bill PDF layout | `lib/services/bill_pdf.dart` (fonts in `assets/fonts/`) |
+| Bills list, programs, billing settings | `lib/screens/bills_screen.dart` |
 | Allergies & current meds card | `lib/widgets/allergies_meds.dart` |
 | Logo & icon | `assets/images/`, `assets/icon/` (then run `dart run flutter_launcher_icons`) |
 

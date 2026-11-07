@@ -80,7 +80,7 @@ class Db {
     final today = DateTime.now().toIso8601String().substring(0, 10);
     return await _c
         .from('visits')
-        .select('*, patients(id, name, age, gender, patient_code, phone)')
+        .select('*, patients(id, name, age, gender, patient_code, phone), bills(id, status)')
         .eq('visit_date', today)
         .neq('status', 'cancelled')
         .order('created_at');

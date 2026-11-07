@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../services/appointments_db.dart';
+import '../services/bill_pdf.dart';
+import '../services/billing_db.dart';
 import '../services/db.dart';
 import '../theme.dart';
 import '../widgets/allergies_meds.dart';
 import '../widgets/common.dart';
+import 'bill_screen.dart';
 import 'book_appointment_screen.dart';
 import 'consultation_screen.dart';
 import 'home_screen.dart';
@@ -24,6 +27,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
   DbRow? _p;
   List<DbRow> _visits = [];
   List<DbRow> _appts = [];
+  List<DbRow> _bills = [];
+  List<DbRow> _programs = [];
 
   @override
   void initState() {
@@ -42,10 +47,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
               ['booked', 'pending_payment'].contains(x['status']))
           .toList()
         ..sort((x, y) => '${x['appt_date']}${x['start_time']}'.compareTo('${y['appt_date']}${y['start_time']}'));
+      List<DbRow> bills = [], progs = [];
+      try {
+        bills = await BillDb.patientBills(widget.patientId);
+        progs = await BillDb.patientPrograms(widget.patientId);
+      } catch (_) {}
       if (mounted) setState(() {
         _p = p;
         _visits = v;
         _appts = a;
+        _bills = bills;
+        _programs = progs;
       });
     } catch (e) {
       if (mounted) showMsg(context, 'Could not load: $e', error: true);
@@ -76,6 +88,54 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     final ok = await Navigator.push(
         context, MaterialPageRoute(builder: (_) => BookAppointmentScreen(patient: _p)));
     if (ok == true) _load();
+  }
+
+  Future<void> _openBill({String? billId, DbRow? program}) async {
+    await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (_) => BillScreen(
+                billId: billId,
+                patientProgram: program,
+                patientId: billId == null && program == null ? widget.patientId : null)));
+    _load();
+  }
+
+  Future<void> _enroll() async {
+    final list = await BillDb.programs();
+    if (!mounted) return;
+    final prog = await showModalBottomSheet<DbRow>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: ListView(shrinkWrap: true, children: [
+          const ListTile(title: Text('Enroll in program', style: TextStyle(fontWeight: FontWeight.w600))),
+          ...list.map((x) => ListTile(
+                title: Text(str(x['name'])),
+                subtitle: Text('${x['duration_days']} days'),
+                trailing: Text('₹${BillPdf.m(x['price'] ?? 0)}'),
+                onTap: () => Navigator.pop(ctx, x),
+              )),
+        ]),
+      ),
+    );
+    if (prog == null || !mounted) return;
+    final start = DateTime.now();
+    final end = start.add(Duration(days: (prog['duration_days'] ?? 90) as int));
+    DbRow? enrolled;
+    final ok = await guard(context, () async {
+      enrolled = await BillDb.enroll({
+        'patient_id': widget.patientId,
+        'program_id': prog['id'],
+        'name': prog['name'],
+        'price': prog['price'] ?? 0,
+        'start_date': isoDate(start),
+        'end_date': isoDate(end),
+      });
+    });
+    if (ok && enrolled != null && mounted) {
+      showMsg(context, 'Enrolled until ${fmtDate(end)}. Prepare the package bill.');
+      await _openBill(program: enrolled);
+    }
   }
 
   Future<void> _tracking() => Navigator.push(context,
@@ -241,7 +301,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
                     ),
                   ],
                   const SizedBox(height: 14),
+                  _programsCard(),
+                  const SizedBox(height: 14),
                   AllergiesMedsSection(patientId: widget.patientId),
+                  const SizedBox(height: 14),
+                  _billsCard(),
                   const SizedBox(height: 14),
                   SectionCard(
                     title: 'Visits (${_visits.length})',
@@ -274,4 +338,69 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
             ),
     );
   }
+
+  Widget _programsCard() {
+    final today = isoDate(DateTime.now());
+    final active = _programs
+        .where((x) => x['status'] == 'active' && str(x['end_date']).compareTo(today) >= 0)
+        .toList();
+    return SectionCard(
+      title: 'Programs',
+      trailing: TextButton.icon(
+          onPressed: _enroll, icon: const Icon(Icons.add, size: 18), label: const Text('Enroll')),
+      child: active.isEmpty
+          ? Text(
+              _programs.isEmpty
+                  ? 'Not on a program'
+                  : 'No active program (${_programs.length} past)',
+              style: const TextStyle(color: Brand.muted))
+          : Column(
+              children: active
+                  .map((x) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.workspace_premium_outlined, color: Color(0xFF2F7480)),
+                        title: Text(str(x['name']), style: const TextStyle(fontWeight: FontWeight.w600)),
+                        subtitle: Text(
+                            '${fmtDate(x['start_date'])} – ${fmtDate(x['end_date'])} · consultations included'),
+                        trailing: PopupMenuButton<String>(
+                          onSelected: (v) async {
+                            await guard(context, () => BillDb.setProgramStatus(x['id'], v));
+                            _load();
+                          },
+                          itemBuilder: (_) => const [
+                            PopupMenuItem(value: 'completed', child: Text('Mark completed')),
+                            PopupMenuItem(value: 'cancelled', child: Text('Cancel program')),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+            ),
+    );
+  }
+
+  Widget _billsCard() => SectionCard(
+        title: 'Bills (${_bills.length})',
+        trailing: TextButton.icon(
+            onPressed: () => _openBill(),
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('New bill')),
+        child: _bills.isEmpty
+            ? const Text('No bills yet', style: TextStyle(color: Brand.muted))
+            : Column(
+                children: _bills.take(10).map((b) {
+                  final due = ((b['total'] ?? 0) as num) - ((b['paid_amount'] ?? 0) as num);
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.receipt_long_outlined, color: Brand.slate),
+                    title: Text('₹${BillPdf.m(b['total'] ?? 0)}',
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text('${b['bill_no']} · ${fmtDate(b['bill_date'])}'),
+                    trailing: due > 0.009
+                        ? Tag('Due ₹${BillPdf.m(due)}', color: Brand.danger)
+                        : const Tag('Paid', color: Brand.sageDark),
+                    onTap: () => _openBill(billId: b['id']),
+                  );
+                }).toList(),
+              ),
+      );
 }

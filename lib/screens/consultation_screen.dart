@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'bill_screen.dart';
+
 import '../services/db.dart';
 import '../theme.dart';
 import '../widgets/allergies_meds.dart';
@@ -143,8 +145,11 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
     if (!mounted) return;
     setState(() => _saving = false);
     if (ok) {
-      showMsg(context, finish ? 'Visit completed' : 'Saved');
-      if (finish) Navigator.pop(context, true);
+      showMsg(context, finish ? 'Visit completed – prepare the bill' : 'Saved');
+      if (finish) {
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (_) => BillScreen(visitId: widget.visitId)));
+      }
     }
   }
 
@@ -274,7 +279,7 @@ class _ConsultationScreenState extends State<ConsultationScreen> {
           child: FilledButton.icon(
             onPressed: _saving ? null : () => _save(finish: true),
             icon: const Icon(Icons.check_circle_outline),
-            label: const Text('FINISH VISIT'),
+            label: const Text('FINISH VISIT & BILL'),
           ),
         ),
       ),

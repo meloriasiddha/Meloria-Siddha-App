@@ -6,6 +6,7 @@ import '../theme.dart';
 import '../widgets/common.dart';
 import 'home_screen.dart';
 import 'stock_screen.dart';
+import 'bills_screen.dart';
 
 /// More: treatment advice list, account, sign out.
 class MoreScreen extends StatelessWidget {
@@ -30,6 +31,24 @@ class MoreScreen extends StatelessWidget {
           Card(
             child: Column(children: [
               ListTile(
+                leading: const Icon(Icons.receipt_long_outlined, color: Brand.slate),
+                title: const Text('Bills & collection'),
+                subtitle: const Text('Today, this week, payment due'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => const BillsScreen())),
+              ),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.workspace_premium_outlined, color: Color(0xFF2F7480)),
+                title: const Text('Programs & packages'),
+                subtitle: const Text('Diabetes, PCOD, weight loss – price and length'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => const ProgramsScreen())),
+              ),
+              const Divider(),
+              ListTile(
                 leading: const Icon(Icons.inventory_2_outlined, color: Brand.teal),
                 title: const Text('Medicine stock'),
                 subtitle: const Text('Medicines, batches, expiry and low-stock alerts'),
@@ -48,6 +67,19 @@ class MoreScreen extends StatelessWidget {
               ),
             ]),
           ),
+          if (Session.isDoctor) ...[
+            const SizedBox(height: 14),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.settings_outlined),
+                title: const Text('Billing settings'),
+                subtitle: const Text('Consultation fee rule, GST'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                    context, MaterialPageRoute(builder: (_) => const BillingSettingsScreen())),
+              ),
+            ),
+          ],
           const SizedBox(height: 14),
           Card(
             child: ListTile(
@@ -60,7 +92,7 @@ class MoreScreen extends StatelessWidget {
           const Center(child: BrandMark(size: 44)),
           const SizedBox(height: 8),
           const Center(
-              child: Text('$appName · v1.1',
+              child: Text('$appName · v1.2',
                   style: TextStyle(color: Brand.muted, fontSize: 12))),
         ],
       ),

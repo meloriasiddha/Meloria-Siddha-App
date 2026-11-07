@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../services/db.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import 'bill_screen.dart';
 import 'consultation_screen.dart';
 import 'home_screen.dart';
 import 'intake_screen.dart';
@@ -146,6 +147,11 @@ class _TodayScreenState extends State<TodayScreen> {
                 fontSize: 12, letterSpacing: 1.2, color: Brand.muted, fontWeight: FontWeight.w600)),
       );
 
+  bool _billed(DbRow v) {
+    final b = v['bills'];
+    return b is List && b.any((x) => x['status'] != 'cancelled');
+  }
+
   Widget _tile(DbRow v) {
     final p = (v['patients'] ?? {}) as Map;
     final status = str(v['status']);
@@ -179,7 +185,19 @@ class _TodayScreenState extends State<TodayScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Tag(label, color: color),
+              if (status == 'done')
+                InkWell(
+                  onTap: () async {
+                    await Navigator.push(context,
+                        MaterialPageRoute(builder: (_) => BillScreen(visitId: v['id'])));
+                    _load(silent: true);
+                  },
+                  child: _billed(v)
+                      ? const Tag('Billed ✓', color: Brand.sageDark)
+                      : const Tag('₹ Bill', color: Brand.danger),
+                )
+              else
+                Tag(label, color: color),
               const SizedBox(height: 4),
               Text(fmtTime(v['created_at']),
                   style: const TextStyle(fontSize: 11, color: Brand.muted)),
